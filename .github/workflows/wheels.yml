@@ -1,0 +1,130 @@
+# Release wheels. Runs on every tag and on manual start, never on push or
+# pull request: the free plan bills minutes, and lint and tests are local
+# gates (CONTRIBUTING.md).
+#
+# No SAP file is needed: the FFI bindings are committed and the SDK is
+# loaded at run time. CI builds and import-checks the wheels; the live
+# suites run on a developer machine.
+#
+# The source paths embedded in panic sites are remapped like `just wheels`
+# does, so a CI wheel and a local wheel carry the same strings.
+
+name: wheels
+
+on:
+  push:
+    tags: ["*"]
+  workflow_dispatch:
+
+concurrency:
+  group: wheels-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  wheel:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            runner: ubuntu-24.04
+            target: x86_64
+            manylinux: "2_28"
+          - name: linux-aarch64
+            runner: ubuntu-24.04-arm
+            target: aarch64
+            manylinux: "2_28"
+          - name: windows-x86_64
+            runner: windows-2025
+            target: x86_64
+          - name: macos-arm64
+            runner: macos-15
+            target: aarch64-apple-darwin
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      # Remap the home folder and the cargo registry out of the panic-site
+      # paths. The Linux build runs in a manylinux container, where the
+      # home folder is /root and cargo lives in /usr/local/cargo; a prefix
+      # that matches nothing is harmless.
+      - name: Set RUSTFLAGS
+        shell: bash
+        run: |
+          flags="--remap-path-prefix=$HOME=/home --remap-path-prefix=${CARGO_HOME:-$HOME/.cargo}=/cargo"
+          flags="$flags --remap-path-prefix=/root=/home --remap-path-prefix=/usr/local/cargo=/cargo"
+          echo "RUSTFLAGS=$flags" >> "$GITHUB_ENV"
+
+      # Host builds (Windows, macOS) cache the registry and target/.
+      - uses: Swatinem/rust-cache@v2
+        if: matrix.manylinux == ''
+        with:
+          shared-key: wheel-${{ matrix.name }}
+
+      - name: Build wheel
+        uses: PyO3/maturin-action@v1
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "11.0"
+        with:
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux || 'auto' }}
+          args: --release --out dist
+          # Linux builds run in a container; sccache is the cache that works there.
+          sccache: ${{ matrix.manylinux != '' }}
+
+      - name: Build compat wheel
+        if: matrix.name == 'linux-x86_64'
+        run: |
+          pip install uv
+          uv build pyrfcx-compat/ --wheel --out-dir dist
+
+      # The wheel must install on a stock CPython and import with no SDK on
+      # the machine. The SDK is loaded at the first connection, not at import.
+      - name: Import check
+        shell: bash
+        run: |
+          pip install uv
+          uv venv --python 3.10 .venv-smoke
+          uv pip install --python .venv-smoke --no-index --find-links dist pyrfcx
+          .venv-smoke/bin/python -c "import pyrfcx, pyrfcx._native; print(pyrfcx.__version__)" 2>/dev/null \
+            || .venv-smoke/Scripts/python -c "import pyrfcx, pyrfcx._native; print(pyrfcx.__version__)"
+          if [ "${{ matrix.name }}" = linux-x86_64 ]; then
+            uv pip install --python .venv-smoke --no-index --find-links dist pyrfcx-compat
+            .venv-smoke/bin/python -c "import pyrfc; print(pyrfc.__version__)"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.name }}
+          path: dist/*.whl
+          if-no-files-found: error
+          retention-days: 7
+
+  # One download with every wheel, for the manual upload to TestPyPI and PyPI.
+  collect:
+    needs: wheel
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheel-*
+          merge-multiple: true
+          path: dist
+      - run: ls -l dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ github.ref_name }}
+          path: dist/*.whl
+          retention-days: 30

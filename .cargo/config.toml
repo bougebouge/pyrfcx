@@ -1,0 +1,19 @@
+# No build target here: cargo builds for the host. The one exception is an
+# ARM64 Windows host, where the SDK is x64-only: set the user environment
+# variable CARGO_BUILD_TARGET=x86_64-pc-windows-msvc there (the justfile
+# exports it on Windows in any case).
+
+# Pin the SDK to the vendored copy for every cargo-launched process
+# (`cargo test`, `cargo run`). Without this, `ffi::load_sdk` falls back to a
+# bare "sapnwrfc.dll" and Windows resolves it from the ambient DLL search
+# order, which can pick up another SAP install's DLL: silently a different
+# SDK from the vendored one. Which library loads then depends on whether an
+# env var happens to be set, and SDK versions do NOT behave identically.
+# `force = true` so an ambient SAPNWRFC_HOME cannot reintroduce that
+# nondeterminism; to test against a different SDK, change this line
+# deliberately.
+#
+# `relative = true` resolves against the directory containing `.cargo/`, i.e.
+# the workspace root. Python-side runs are pinned in tests/conftest.py.
+[env]
+SAPNWRFC_HOME = { value = "vendor/nwrfcsdk", force = true, relative = true }

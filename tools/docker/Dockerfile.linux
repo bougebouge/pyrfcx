@@ -1,0 +1,47 @@
+# Linux build and test image for pyrfcx (x86_64 and aarch64).
+#
+# The image holds toolchains only. It contains no SAP file: the SDK, the
+# crypto library, the PSE and sapnwrfc.ini are mounted at run time (see the
+# linux-* recipes in the justfile).
+#
+# Two bases, one per purpose:
+#   * wheel: quay.io/pypa/manylinux_2_28_<arch>. The wheel's own .so links
+#     only libc, so an old base gives the widest manylinux tag.
+#   * test:  quay.io/pypa/manylinux_2_34_<arch>. The SDK needs libstdc++
+#     GLIBCXX_3.4.26 (GCC 9), which the manylinux_2_28 base (GCC 8) does not
+#     have, so the SDK cannot load there.
+#
+# Build: docker build --platform linux/<amd64|arm64> \
+#          --build-arg BASE=quay.io/pypa/manylinux_2_34_<x86_64|aarch64> \
+#          -t pyrfcx-linux-test:<arch> tools/docker
+
+ARG BASE
+FROM ${BASE}
+
+# libclang for bindgen (just regen-bindings).
+RUN dnf install -y clang-devel && dnf clean all
+
+ENV RUSTUP_HOME=/opt/rustup \
+    CARGO_HOME=/opt/cargo \
+    PATH=/opt/cargo/bin:$PATH
+RUN curl -sSf https://sh.rustup.rs \
+    | sh -s -- -y --no-modify-path --profile minimal --default-toolchain stable \
+        --component clippy --component rustfmt
+
+ARG BINDGEN_VERSION=0.72.1
+RUN cargo install bindgen-cli --version ${BINDGEN_VERSION} --locked \
+    && rm -rf /opt/cargo/registry /opt/cargo/git
+
+# maturin. The manylinux images already ship uv, pipx, auditwheel and
+# CPython 3.10-3.14 in /opt/python.
+RUN pipx install "maturin>=1.5,<2" && maturin --version
+
+# A CPython with a shared libpython for `cargo build/test --workspace`
+# (pyrfcx-py links the Python API in tests). The /opt/python builds are
+# static, and the image's default python3 is older than the abi3 floor.
+RUN dnf install -y python3.12-devel && dnf clean all
+ENV PYO3_PYTHON=/usr/bin/python3.12
+
+# iptables and iproute (ss) for the netcut tests (tests/test_netcut.py).
+# They take effect only with `docker run --cap-add NET_ADMIN`.
+RUN dnf install -y iptables iproute && dnf clean all

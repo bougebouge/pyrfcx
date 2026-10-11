@@ -1,0 +1,52 @@
+/vendor/
+*.log
+*.trc
+sapnwrfc.ini
+
+# Rust
+/target/
+**/*.rs.bk
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+*.pdb
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+
+# UV
+uv.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local environment: SAP endpoint config, ADT session cookies, MCP server setup
+.env
+.mcp.json
+cookies.txt
+
+# Real pyrfc 3.4 oracle venv and its cloned source (`just pyrfc-real-setup`)
+/.venv-pyrfc-real/
+/.pyrfc-real-src/
+
+# tox matrix envs and the shared wheel build env
+/.tox/

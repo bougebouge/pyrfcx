@@ -1,0 +1,12 @@
+{
+  "captured": "2026-09-28",
+  "functions": [
+    "STFC_STRUCTURE",
+    "STFC_STRING",
+    "STFC_XSTRING",
+    "STFC_DEEP_TABLE"
+  ],
+  "repository_file": "TEST_NW750.dat",
+  "repository_id": "TEST_NW750",
+  "sdk_version": "7500.0.18"
+}

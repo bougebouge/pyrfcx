@@ -1,0 +1,56 @@
+# cargo-about configuration for THIRD-PARTY-LICENSES.
+# Regenerate with `just third-party-licenses`.
+# The file covers the crates linked into the pyrfcx-py extension module.
+
+# Add a target here when a wheel is built for it.
+targets = [
+    "x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "aarch64-apple-darwin",
+]
+
+# Build scripts and dev/test crates are not linked into the wheel.
+ignore-build-dependencies = true
+ignore-dev-dependencies = true
+
+# Only the licenses the linked crates need, in order of preference.
+# A dual-licensed crate is listed under the first match.
+accepted = [
+    "MIT",
+    "ISC",
+    "Unicode-3.0",
+    # Last: only the workspace's own crates need it.
+    "Apache-2.0",
+]
+
+# windows-link ships lower-case, indented license files that the scan
+# does not pick up. Without this entry the file gets a synthesized MIT
+# text without the Microsoft copyright line.
+[windows-link.clarify]
+license = "MIT OR Apache-2.0"
+
+[[windows-link.clarify.files]]
+path = "license-mit"
+license = "MIT"
+checksum = "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+
+[[windows-link.clarify.files]]
+path = "license-apache-2.0"
+license = "Apache-2.0"
+checksum = "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+
+# pyo3 also ships license files for its pyo3-runtime Python package.
+# The scan lists pyo3 twice without this entry.
+[pyo3.clarify]
+license = "MIT OR Apache-2.0"
+
+[[pyo3.clarify.files]]
+path = "LICENSE-MIT"
+license = "MIT"
+checksum = "afcbe3b2e6b37172b5a9ca869ee4c0b8cdc09316e5d4384864154482c33e5af6"
+
+[[pyo3.clarify.files]]
+path = "LICENSE-APACHE"
+license = "Apache-2.0"
+checksum = "32c76dbe0e73d79100d5ece77c158399f2e2541bc5c78548a4ba45c1cb53c5c9"

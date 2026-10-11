@@ -1,0 +1,63 @@
+# Python version matrix for the test suite: `just test-all-py` (or `uv run tox`).
+#
+# One abi3 wheel is built once in the shared `.pkg` env and installed in every
+# test env — that single wheel is what the abi3 floor promises works on
+# every CPython >= 3.10.
+#
+# x64 only: the SAP NW RFC SDK has no ARM64 build. On an ARM64 host uv
+# picks an aarch64 interpreter by default, so every env pins x86_64 in its
+# base_python. tox-uv turns `cpython3.10-64-x86_64` into the uv request
+# `cpython-3.10-windows-x86_64-none`; uv downloads it when it is missing.
+#
+# Other hosts: three env vars replace the Windows values (`just test-all-py`
+# sets them on macOS): PYRFCX_TOX_ARCH (interpreter architecture),
+# PYRFCX_TOX_PLATFORM (suffix of sysconfig.get_platform()) and
+# PYRFCX_TOX_TARGET (the Rust target triple).
+#
+# No SDK environment setup here: tests/conftest.py pins the vendored SDK, and
+# tests/test_sdk_pin.py fails if that pin does not hold.
+
+requires = ["tox>=4.21", "tox-uv>=1.11"]
+env_list = ["py310", "py311", "py312", "py313", "py314"]
+
+[env_run_base]
+description = "pytest on {env_name} ({env:PYRFCX_TOX_ARCH:x86_64}) against the shared abi3 wheel"
+package = "wheel"
+wheel_build_env = ".pkg"
+extras = ["dev"]
+# pyrfcx-compat is a separate distribution that depends on pyrfcx. tox installs
+# `deps` before the wheel, when pyrfcx cannot be resolved yet, so compat goes
+# in after the wheel, with --no-deps (pyrfcx is its only dependency).
+deps = ["uv"]
+# The live tests log on with SNC: without SNC_LIB_64 the SDK falls back to a
+# bare "sncgss64.dll" and every connection fails.
+pass_env = ["SNC_LIB", "SNC_LIB_64", "SECUDIR"]
+commands_pre =[["uv", "pip", "install", "--no-deps", "./pyrfcx-compat"]]
+commands = [
+    # Fail fast on a non-x64 interpreter. platform.machine() reports the host
+    # (ARM64) even under x64 emulation; sysconfig reports the interpreter.
+    ["python", "-c", "import sys, sysconfig; print(sys.version, sysconfig.get_platform()); sys.exit(not sysconfig.get_platform().endswith('{env:PYRFCX_TOX_PLATFORM:win-amd64}'))"],
+    ["pytest", { replace = "posargs", default = ["tests/"], extend = true }],
+]
+
+[env.py310]
+base_python = ["cpython3.10-64-{env:PYRFCX_TOX_ARCH:x86_64}"]
+
+[env.py311]
+base_python = ["cpython3.11-64-{env:PYRFCX_TOX_ARCH:x86_64}"]
+
+[env.py312]
+base_python = ["cpython3.12-64-{env:PYRFCX_TOX_ARCH:x86_64}"]
+
+[env.py313]
+base_python = ["cpython3.13-64-{env:PYRFCX_TOX_ARCH:x86_64}"]
+
+[env.py314]
+base_python = ["cpython3.14-64-{env:PYRFCX_TOX_ARCH:x86_64}"]
+
+[env.".pkg"]
+base_python = ["cpython3.14-64-{env:PYRFCX_TOX_ARCH:x86_64}"]
+# maturin builds for the host toolchain unless told the target.
+set_env = { MATURIN_PEP517_ARGS = "--target {env:PYRFCX_TOX_TARGET:x86_64-pc-windows-msvc}" }
+# tox strips these by default; a non-default Rust install needs them.
+pass_env = ["CARGO_HOME", "RUSTUP_HOME", "RUSTUP_TOOLCHAIN"]

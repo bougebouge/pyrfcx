@@ -1,0 +1,20 @@
+[workspace]
+resolver = "3"
+# `tools/*` takes the tool crates when they exist; the public tree has none,
+# and the `exclude` list names folders that may not exist either.
+# A glob that matches no crate folder is no error, but every folder it
+# matches must hold a Cargo.toml: add each non-crate folder under tools/ to
+# `exclude`.
+members = ["crates/pyrfcx-core", "crates/pyrfcx-py", "tools/*"]
+exclude = [
+    "tools/__pycache__",
+    "tools/cprobe",
+    "tools/docker",
+    "tools/export-public",
+    "tools/memprobe-c",
+]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.95"
+license = "Apache-2.0"

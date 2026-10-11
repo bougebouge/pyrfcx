@@ -1,0 +1,117 @@
+[build-system]
+requires = ["maturin>=1.5,<2"]
+build-backend = "maturin"
+
+[project]
+name = "pyrfcx"
+requires-python = ">=3.10"
+dynamic = ["version"]
+description = "Modern SAP NW RFC client for Python"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE", "THIRD-PARTY-LICENSES"]
+authors = [{ name = "pyrfcx contributors" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/bougebouge/pyrfcx"
+Repository = "https://github.com/bougebouge/pyrfcx"
+
+[project.optional-dependencies]
+dev = [
+    "maturin>=1.5,<2",
+    "pytest>=8",
+    "ruff>=0.12",
+    "mypy>=1.15",
+    "tox>=4.21",
+    "tox-uv>=1.11",
+]
+
+[tool.maturin]
+manifest-path = "crates/pyrfcx-py/Cargo.toml"
+module-name = "pyrfcx._native"
+# The Python package lives under python/, not at the root, so a run from the
+# checkout imports the installed package and not the source tree (maturin's
+# recommended layout).
+python-source = "python"
+exclude = ["vendor/**"]
+
+# No Rust SBOM in the wheel: it records path dependencies as absolute
+# file URLs of the build host.
+[tool.maturin.sbom]
+rust = false
+
+[tool.ruff]
+target-version = "py310"
+line-length = 99
+# Internal notes and the pyrfc 3.4 reference source; not part of the package.
+# Markdown: ruff 0.16 formats fenced Python blocks; the documentation snippets
+# keep their aligned comments.
+extend-exclude = ["docs-*", "PyRFC-*", "*.md"]
+# Both import packages are first-party: pyrfcx at the root, pyrfc in the compat distribution.
+src = ["python", "pyrfcx-compat/src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "TCH", "RUF"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+# Adapted pyrfc 3.4 tests (mine + adapt): kept close to the untyped
+# originals, and several deliberately violate types (that's what they test).
+module = "tests.compat.*"
+ignore_errors = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Dump-producing tests are excluded by default — see the `dumps` marker.
+# `-m` is last-wins, so `pytest -m dumps` (or `just test-dumps`) overrides
+# this and runs exactly those.
+addopts = "-m 'not dumps and not netcut and not soak'"
+markers = [
+    "live: requires a live SAP connection (use -m live to run)",
+    "compat: validates the pyrfc compat facade against pyrfc 3.4 behavior",
+    """dumps: leaves an ST22 short dump on the SAP system. Not a defect \
+and not avoidable: in ABAP a runtime error IS a short dump, so a test \
+asserting AbapRuntimeError mapping must cause one. The stimulus is a \
+SAP-standard FM (RFC_RAISE_ERROR / STFC_SAPGUI), not ours, and catching \
+it ABAP-side would make the call succeed and leave nothing to map. \
+Excluded by default to keep ST22 clean; run before a commit/gate review \
+with `just test-dumps`.""",
+    """netcut: drops the TCP socket of a live connection with iptables or \
+`ss -K` and records what each stack does. Runs only in the Linux test \
+container started with `PYRFCX_LINUX_DOCKER_ARGS="--cap-add NET_ADMIN"`; \
+skips anywhere else. A black-hole case waits up to PYRFCX_NETCUT_WAIT \
+seconds (default 120). Excluded by default; run with \
+`just linux-test <arch> 3.12 -m netcut -s tests/test_netcut.py`.""",
+    """soak: long live loops that look for leaks: process memory over many \
+calls and over many open/close cycles, timer threads left by the `timeout` \
+call option, memory over many cancel-and-reconnect rounds. Takes several \
+minutes per stack. Excluded by default; run with \
+`pytest tests/test_soak.py -m soak -s`.""",
+]
+
+[tool.uv]
+# maturin takes the version from Cargo, so a Cargo.toml change must invalidate
+# uv's cached build of pyrfcx, not only a pyproject.toml change.
+cache-keys = [{ file = "pyproject.toml" }, { file = "Cargo.toml" }, { file = "crates/*/Cargo.toml" }, { file = "crates/**/*.rs" }]

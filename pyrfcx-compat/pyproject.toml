@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyrfcx-compat"
+version = "0.1.0"
+requires-python = ">=3.10"
+description = "pyrfc-compatible facade over pyrfcx"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "pyrfcx contributors" }]
+dependencies = ["pyrfcx==0.1.0"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+
+[project.urls]
+Homepage = "https://github.com/bougebouge/pyrfcx"
+Repository = "https://github.com/bougebouge/pyrfcx"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyrfc"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [".gitignore"]
