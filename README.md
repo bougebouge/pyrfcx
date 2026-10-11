@@ -5,6 +5,51 @@ pyrfc 3.4. Your program keeps `import pyrfc` and runs unchanged.
 
 The compatibility layer reproduces the quirks of pyrfc 3.4, each one extensively measured on real pyrfc first.
 
+## Install
+
+```powershell
+pip install pyrfcx-compat
+```
+
+Remove real `pyrfc` from the environment first: both packages install the
+import name `pyrfc`.
+
+## Use
+
+```python
+from pyrfc import Connection
+
+with Connection(dest="MY_DEST") as conn:
+    result = conn.call("STFC_CONNECTION", REQUTEXT="hi")
+    print(result["ECHOTEXT"])
+```
+
+`dest` names a destination in a `sapnwrfc.ini` file. By default the SDK
+reads that file from the current directory. You can also pass the connection parameters
+directly (`ashost`, `sysnr`, `client`, `user`, `passwd`, and so on).
+
+### What is supported
+
+| Area | Members |
+|---|---|
+| Connection | `Connection(config=..., **params)`, `open()`, `close()`, `reopen()`, `is_valid()`, `alive`, context manager |
+| Calls | `call(name, options=..., **params)`, `ping()`, `cancel()` |
+| `config` keys | `rstrip`, `return_import_params`, `dtime`, `check_date`, `check_time`, `timeout` |
+| `call` options | `not_requested`, `timeout` |
+| Information | `version`, `options`, `get_connection_attributes()` |
+| Descriptions | `get_function_description()`, with `FunctionDescription`, `TypeDescription`, `RfcFieldType` and `RfcParameterDirection` |
+| Module functions | `get_nwrfclib_version()`, `cancel_connection()`, `set_ini_file_directory()`, `reload_ini_file()`, `set_cryptolib_path()` |
+| Exceptions | The pyrfc classes, with the same names and the same attributes: `RFCError`, `RFCLibError`, `CommunicationError`, `LogonError`, `ABAPApplicationError`, `ABAPRuntimeError`, `ExternalAuthorizationError`, `ExternalApplicationError`, `ExternalRuntimeError`, `RFCTypeError` |
+
+### What is not supported
+
+- `Server`, `Throughput`, tRFC, qRFC, bgRFC and WebSocket RFC. This is a
+  client library, so these are out of scope.
+- Not built yet: `free()`, `reset_server_context()`, `type_desc_get()`,
+  `type_desc_remove()`, `func_desc_remove()`, `set_locale_radix()`, the
+  language converters and `ConnectionParameters`.
+- `Connection.handle` is not exposed. The Rust core owns the SDK handle.
+
 ### Tests
 
 Every live test runs against a real ABAP system. The compat suite runs
@@ -73,51 +118,6 @@ With `SAPNWRFC_HOME` set, nothing else is needed: no `PATH` or
 name, and on Windows a stray copy of `sapnwrfc.dll` can be found whose ICU
 libraries are not: the first connect then hangs on a hidden "could not open
 ICU library" dialog instead of failing. Set `SAPNWRFC_HOME`.
-
-## Install
-
-```powershell
-pip install pyrfcx-compat
-```
-
-Remove real `pyrfc` from the environment first: both packages install the
-import name `pyrfc`.
-
-## Use
-
-```python
-from pyrfc import Connection
-
-with Connection(dest="MY_DEST") as conn:
-    result = conn.call("STFC_CONNECTION", REQUTEXT="hi")
-    print(result["ECHOTEXT"])
-```
-
-`dest` names a destination in a `sapnwrfc.ini` file. By default the SDK
-reads that file from the current directory. You can also pass the connection parameters
-directly (`ashost`, `sysnr`, `client`, `user`, `passwd`, and so on).
-
-### What is supported
-
-| Area | Members |
-|---|---|
-| Connection | `Connection(config=..., **params)`, `open()`, `close()`, `reopen()`, `is_valid()`, `alive`, context manager |
-| Calls | `call(name, options=..., **params)`, `ping()`, `cancel()` |
-| `config` keys | `rstrip`, `return_import_params`, `dtime`, `check_date`, `check_time`, `timeout` |
-| `call` options | `not_requested`, `timeout` |
-| Information | `version`, `options`, `get_connection_attributes()` |
-| Descriptions | `get_function_description()`, with `FunctionDescription`, `TypeDescription`, `RfcFieldType` and `RfcParameterDirection` |
-| Module functions | `get_nwrfclib_version()`, `cancel_connection()`, `set_ini_file_directory()`, `reload_ini_file()`, `set_cryptolib_path()` |
-| Exceptions | The pyrfc classes, with the same names and the same attributes: `RFCError`, `RFCLibError`, `CommunicationError`, `LogonError`, `ABAPApplicationError`, `ABAPRuntimeError`, `ExternalAuthorizationError`, `ExternalApplicationError`, `ExternalRuntimeError`, `RFCTypeError` |
-
-### What is not supported
-
-- `Server`, `Throughput`, tRFC, qRFC, bgRFC and WebSocket RFC. This is a
-  client library, so these are out of scope.
-- Not built yet: `free()`, `reset_server_context()`, `type_desc_get()`,
-  `type_desc_remove()`, `func_desc_remove()`, `set_locale_radix()`, the
-  language converters and `ConnectionParameters`.
-- `Connection.handle` is not exposed. The Rust core owns the SDK handle.
 
 ## pyrfc 3.4 quirks that the drop-in keeps
 
