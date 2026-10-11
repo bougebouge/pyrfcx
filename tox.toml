@@ -17,14 +17,14 @@
 # No SDK environment setup here: tests/conftest.py pins the vendored SDK, and
 # tests/test_sdk_pin.py fails if that pin does not hold.
 
-requires = ["tox>=4.21", "tox-uv>=1.11"]
+requires = ["tox>=4.22", "tox-uv>=1.11"]
 env_list = ["py310", "py311", "py312", "py313", "py314"]
 
 [env_run_base]
 description = "pytest on {env_name} ({env:PYRFCX_TOX_ARCH:x86_64}) against the shared abi3 wheel"
 package = "wheel"
 wheel_build_env = ".pkg"
-extras = ["dev"]
+dependency_groups = ["dev"]
 # pyrfcx-compat is a separate distribution that depends on pyrfcx. tox installs
 # `deps` before the wheel, when pyrfcx cannot be resolved yet, so compat goes
 # in after the wheel, with --no-deps (pyrfcx is its only dependency).

@@ -1,7 +1,6 @@
-# pyrfcx-compat
+# pyrfcx
 
-`pyrfcx-compat` is a drop-in replacement for the client part of SAP's
-pyrfc 3.4. Your program keeps `import pyrfc` and runs unchanged.
+`pyrfcx` is an SAP NW RFC client for Python with a Rust core which includes **`pyrfcx-compat`** (compatibility layer), a drop-in replacement for the client part of SAP's pyrfc 3.4.
 
 The compatibility layer reproduces the quirks of pyrfc 3.4, each one extensively measured on real pyrfc first.
 

@@ -10,9 +10,10 @@ description = "Modern SAP NW RFC client for Python"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE", "THIRD-PARTY-LICENSES"]
-authors = [{ name = "pyrfcx contributors" }]
+authors = [{ name = "BougeBouge Consulting" }]
+keywords = ["pyrfc", "sap", "rfc", "nwrfc", "sapnwrfc", "abap", "netweaver"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
@@ -27,13 +28,14 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Typing :: Typed",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 [project.urls]
 Homepage = "https://github.com/bougebouge/pyrfcx"
 Repository = "https://github.com/bougebouge/pyrfcx"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "maturin>=1.5,<2",
     "pytest>=8",

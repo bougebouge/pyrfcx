@@ -221,14 +221,12 @@ linux-wheel arch:
 linux-test arch py="3.10" *args:
     bash tools/docker/linux-run.sh test {{ arch }} bash tools/docker/linux-test.sh {{ py }} {{ args }}
 
-# NB: `uv sync --dev` (dependency-groups) would PRUNE the venv — our dev deps
-# are extras, so it removes pytest/ruff/mypy/maturin/pyrfcx-compat and leaves
-# you reinstalling by hand. `--extra dev` is the correct flag; the editable
-# installs below are not in the lock and must be restored after any sync.
+# NB: `uv sync` removes everything that is not in the lock, so the editable
+# installs below must be restored after any sync.
 
-# Sync/create the project venv with all dev dependencies (+ editable installs)
+# Sync/create the project venv with the dev dependency group (+ editable installs)
 sync:
-    uv sync --extra dev
+    uv sync --group dev
     uv run maturin develop --uv --target {{ maturin_target }}
     uv pip install -e pyrfcx-compat/
 

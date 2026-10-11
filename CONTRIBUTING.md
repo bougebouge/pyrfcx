@@ -14,17 +14,16 @@ rules a change must follow.
 | [just](https://just.systems/) | current | Runs the tasks in `justfile`. |
 | SAP NW RFC SDK | 7.50, patch level 15 or later, for the host platform | Put it in `vendor/nwrfcsdk/` (see below). |
 
-Create the venv with your Python, then install the development extras:
+Create the venv with your Python, then install the development dependencies:
 
 ```sh
 uv venv --python <path-to-python>
 just sync
 ```
 
-Do not run `uv sync --dev`. The dev dependencies are extras, not dependency
-groups, so `--dev` removes pytest, ruff, mypy, maturin and the editable
-installs. `just sync` uses `uv sync --extra dev` and restores the editable
-installs.
+The dev dependencies are the `dev` dependency group in `pyproject.toml`.
+A bare `uv sync` removes the editable installs; `just sync` runs
+`uv sync --group dev` and restores them.
 
 ### Build target
 
@@ -50,7 +49,7 @@ The `justfile` exports the same target and passes it to maturin, so the
 | `just` | Lists the targets. |
 | `cargo build --workspace` | Builds the Rust crates alone; no Python needed. |
 | `just develop` | Builds the extension module into the venv (`maturin develop`). |
-| `just sync` | Syncs the venv with the dev extras, builds pyrfcx, installs `pyrfcx-compat/` as editable. |
+| `just sync` | Syncs the venv with the dev group, builds pyrfcx, installs `pyrfcx-compat/` as editable. |
 | `just test` | Runs `develop`, then the Rust tests and the Python tests. |
 | `just test-rust` | Runs `cargo test --workspace`. |
 | `just test-python` | Runs `pytest tests/`. Run `just develop` first. Extra arguments go to pytest: `just test-python -rs`. A good run has 0 failed; skips come only from a missing `PYRFCX_TEST_USER`, an SNC-only destination or a release below 754; `dumps`, `netcut` and `soak` tests are deselected by default. |
@@ -59,7 +58,7 @@ The `justfile` exports the same target and passes it to maturin, so the
 | `just pyrfc-real-setup` | Builds real pyrfc 3.4 into `.venv-pyrfc-real/` (the oracle, see below). |
 | `just test-pyrfc-real` | Runs `tests/compat/` against real pyrfc 3.4. Extra arguments go to pytest. |
 | `just test-compat-both` | Runs `tests/compat/` against the facade, then against real pyrfc. Extra arguments go to both. |
-| `just lint` | Runs `cargo fmt --check`, clippy with `-D warnings`, ruff check, ruff format check, mypy. Needs the dev extras: run `just sync` first. |
+| `just lint` | Runs `cargo fmt --check`, clippy with `-D warnings`, ruff check, ruff format check, mypy. Needs the dev group: run `just sync` first. |
 | `just fmt` | Formats Rust and Python and applies ruff fixes. |
 | `just wheels` | Builds a release wheel for the host platform, for local checks. Release wheels come from CI (below). |
 | `just third-party-licenses` | Regenerates `THIRD-PARTY-LICENSES` with cargo-about. Run it after a dependency change. |
