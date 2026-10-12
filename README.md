@@ -99,8 +99,10 @@ per table row:
 
 ## Requirements
 
-1. The **SAP NW RFC SDK 7.50, patch level 15 or later**, for your platform.
-   Patch levels from 5 should also work, but they are untested.
+1. The **SAP NW RFC SDK 7.50, patch level 11 or later**, for your platform.
+   Patch levels from 5 should also work, but they are untested. The SDK
+   changed its behaviour between patch levels in a few places:
+   [docs/sdk-patch-levels.md](docs/sdk-patch-levels.md).
    The SDK belongs to SAP and is not part of this distribution. Download
    it from the SAP Support Portal (`support.sap.com`). You need an S-user.
 2. The environment variable `SAPNWRFC_HOME`. Set it to the SDK directory

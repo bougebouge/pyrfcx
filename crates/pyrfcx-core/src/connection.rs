@@ -202,6 +202,14 @@ pub struct CompatOptions {
     /// be redundant there and might diverge from pyrfc's `Decimal()` grammar.
     /// NOT an SDK concept; exists solely for pyrfc retrocompatibility.
     pub skip_decimal_input_check: bool,
+    /// When true, a parameter name passed as inactive is NOT looked up
+    /// before `RfcSetParameterActive`: the SDK alone decides. pyrfc 3.4 does
+    /// no lookup of its own, so below SDK 7.50 PL 15 (where
+    /// `RfcSetParameterActive` returns `RFC_OK` for an unknown name) an
+    /// unknown name is silently ignored, and from PL 15 the SDK raises.
+    /// When false (native default), an unknown name raises on every patch
+    /// level. NOT an SDK concept; exists solely for pyrfc retrocompatibility.
+    pub skip_inactive_name_check: bool,
     /// When true, inactive parameters are deactivated BEFORE the inputs are
     /// set (pyrfc 3.4's order in `Connection.call`). The SDK then decides
     /// what a value for an inactive parameter does: a setter on the
@@ -684,13 +692,13 @@ impl Connection {
         // Compat reverses the order (pyrfc's, see `deactivate_before_inputs`).
         if compat.deactivate_before_inputs {
             for name in inactive {
-                set_parameter_inactive(sdk, func_handle.raw(), name)?;
+                set_parameter_inactive(sdk, func_desc, func_handle.raw(), name, compat)?;
             }
             marshal::set_inputs(sdk, func_desc, func_handle.raw(), inputs, compat)?;
         } else {
             marshal::set_inputs(sdk, func_desc, func_handle.raw(), inputs, compat)?;
             for name in inactive {
-                set_parameter_inactive(sdk, func_handle.raw(), name)?;
+                set_parameter_inactive(sdk, func_desc, func_handle.raw(), name, compat)?;
             }
         }
 
@@ -748,16 +756,26 @@ impl Connection {
 
 /// Deactivate one named parameter on a function data container for the
 /// duration of this call (`RfcSetParameterActive`, guide §4.2.2).
+///
+/// An unknown name is rejected by our own `RfcGetParameterDescByName`
+/// lookup first, because `RfcSetParameterActive` itself reports an unknown
+/// name only from SDK 7.50 PL 15 on; below that it returns `RFC_OK` and the
+/// name is silently ignored. The lookup makes native raise on every patch
+/// level. Compat skips it (`CompatOptions::skip_inactive_name_check`).
 fn set_parameter_inactive(
     sdk: &ffi::SapNwRfc,
+    func_desc: ffi::RFC_FUNCTION_DESC_HANDLE,
     func_handle: ffi::RFC_FUNCTION_HANDLE,
     name: &str,
+    compat: CompatOptions,
 ) -> Result<(), RfcError> {
     let name_uc = crate::uc::encode_nul_terminated(name, || "parameter name".into())?;
+    if !compat.skip_inactive_name_check {
+        marshal::parameter_desc(sdk, func_desc, &name_uc)?;
+    }
     let mut error_info = ffi::zero_error_info();
     // Safety: func_handle is a valid function handle, name_uc is
-    // null-terminated, error_info is a valid out-param. The SDK errors on
-    // an unknown parameter name.
+    // null-terminated, error_info is a valid out-param.
     let rc =
         unsafe { sdk.RfcSetParameterActive(func_handle, name_uc.as_ptr(), 0, &mut error_info) };
     if rc != ffi::RFC_RC::RFC_OK {
@@ -891,6 +909,7 @@ mod tests {
         assert!(!opts.skip_input_length_check);
         assert!(!opts.pyrfc_int_setters);
         assert!(!opts.skip_decimal_input_check);
+        assert!(!opts.skip_inactive_name_check);
         assert!(!opts.deactivate_before_inputs);
         assert!(!opts.read_inactive_outputs);
         assert!(!opts.pyrfc_date_time_setters);
@@ -904,6 +923,7 @@ mod tests {
             skip_input_length_check: true,
             pyrfc_int_setters: true,
             skip_decimal_input_check: true,
+            skip_inactive_name_check: true,
             deactivate_before_inputs: true,
             read_inactive_outputs: true,
             pyrfc_date_time_setters: true,
@@ -914,6 +934,7 @@ mod tests {
         assert!(copy.skip_input_length_check);
         assert!(copy.pyrfc_int_setters);
         assert!(copy.skip_decimal_input_check);
+        assert!(copy.skip_inactive_name_check);
         assert!(copy.return_import_params);
     }
 }

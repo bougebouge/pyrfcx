@@ -50,13 +50,14 @@ class TestInactiveSentinel:
         assert result["ECHOTEXT"].rstrip() == ""
 
     def test_unknown_inactive_name_raises(self, conn: Connection) -> None:
-        # Unknown parameter names error, never silently skipped — the
-        # SDK's own error (probe: RFC_INVALID_PARAMETER, code 20).
+        # Unknown parameter names error, never silently skipped, on every
+        # SDK patch level: the core looks the name up first and raises the
+        # lookup's own error (RFC_INVALID_PARAMETER, code 20).
         with pytest.raises(RfcError) as excinfo:
             conn.call("STFC_CONNECTION", NO_SUCH_PARAM=INACTIVE)
         assert excinfo.value.key == "RFC_INVALID_PARAMETER"
         assert excinfo.value.code == 20
-        assert excinfo.value.sdk_function == "RfcSetParameterActive"
+        assert excinfo.value.sdk_function == "RfcGetParameterDescByName"
 
 
 class TestCancel:

@@ -12,7 +12,7 @@ rules a change must follow.
 | [uv](https://docs.astral.sh/uv/) | current | Use uv for all package management, not pip. |
 | [maturin](https://www.maturin.rs/) | 1.5 or later, below 2 | The build backend. `just sync` installs it into the venv. |
 | [just](https://just.systems/) | current | Runs the tasks in `justfile`. |
-| SAP NW RFC SDK | 7.50, patch level 15 or later, for the host platform | Put it in `vendor/nwrfcsdk/` (see below). |
+| SAP NW RFC SDK | 7.50, patch level 11 or later, for the host platform | Put it in `vendor/nwrfcsdk/` (see below). |
 
 Create the venv with your Python, then install the development dependencies:
 
@@ -71,7 +71,7 @@ The SDK is not in the repository. Copy the SAP NW RFC SDK 7.50 for the host
 platform to `vendor/nwrfcsdk/`, so that `vendor/nwrfcsdk/lib/` holds the SDK
 library (`sapnwrfc.dll`, `libsapnwrfc.so` or `libsapnwrfc.dylib`) and its ICU
 libraries. A symbolic link works too. `vendor/` is gitignored. The minimum
-SDK is 7.50 patch level 15. A function newer than patch level 15 must not be
+SDK is 7.50 patch level 11. A function newer than patch level 11 must not be
 added to the generated bindings.
 
 The build and the tests pin `SAPNWRFC_HOME` to that directory:

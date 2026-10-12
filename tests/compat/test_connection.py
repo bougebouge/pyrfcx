@@ -35,7 +35,7 @@ from pyrfc import (
     ExternalRuntimeError,
     RFCError,
 )
-from tests.compat.config import BACKEND, UNICODETEST
+from tests.compat.config import BACKEND, UNICODETEST, skip_if_sdk_accepts_unknown_inactive_name
 from tests.compat.config import CONNECTION_PARAMS as params
 from tests.test_sdk_pin import vendored_dll_version
 
@@ -337,6 +337,7 @@ def test_ping_closed_connection(conn):
 
 
 def test_reconnect_only_after_invoke(conn):
+    skip_if_sdk_accepts_unknown_inactive_name()
     # A new connection has a new CPI-C conversation ID.
     conv_id = conn.get_connection_attributes()["cpicConvId"]
     # Errors before RfcInvoke do not reconnect. RFC_INVALID_PARAMETER is in

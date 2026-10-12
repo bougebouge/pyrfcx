@@ -918,6 +918,9 @@ impl Connection {
                 // before the core; the core's own decimal check would be
                 // redundant (and could diverge), so skip it in compat.
                 skip_decimal_input_check: true,
+                // pyrfc does no name lookup of its own before deactivating;
+                // the SDK alone decides whether an unknown name is an error.
+                skip_inactive_name_check: true,
                 // pyrfc deactivates before filling and never asks the SDK
                 // whether an output is active.
                 deactivate_before_inputs: true,

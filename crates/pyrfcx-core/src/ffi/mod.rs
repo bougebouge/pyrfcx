@@ -258,18 +258,8 @@ fn preload_icu(lib_dir: &std::path::Path) -> Result<(), RfcError> {
         .filter_map(|e| e.ok()?.file_name().into_string().ok())
         .collect();
 
-    // The version suffix differs by patch level (`libicuuc.50.dylib`,
-    // `libicuuc57.dylib`), so match on the stem only.
-    let suffix = if cfg!(target_os = "macos") {
-        ".dylib"
-    } else {
-        ".so"
-    };
     for prefix in ["libicudata", "libicuuc", "libicui18n"] {
-        let Some(name) = names
-            .iter()
-            .find(|n| n.starts_with(prefix) && n.ends_with(suffix))
-        else {
+        let Some(name) = names.iter().find(|n| is_icu_file(prefix, n)) else {
             continue;
         };
         let path = lib_dir.join(name);
@@ -288,6 +278,24 @@ fn preload_icu(lib_dir: &std::path::Path) -> Result<(), RfcError> {
         let _ = lib.into_raw();
     }
     Ok(())
+}
+
+/// Is `name` the ICU library `prefix` as shipped by some SDK patch level?
+///
+/// The version lands in a different place per patch level and platform:
+/// `libicuuc.50.dylib` and `libicuuc57.dylib` on macOS, `libicuuc.so.50`
+/// and `libicuuc57.so` on Linux. Matching only names that END in `.so`
+/// skipped every `libicu*.so.NN` file silently, and the SDK then exited the
+/// process at the first connection. So match on the stem and the extension
+/// anywhere after it.
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn is_icu_file(prefix: &str, name: &str) -> bool {
+    let ext = if cfg!(target_os = "macos") {
+        ".dylib"
+    } else {
+        ".so"
+    };
+    name.starts_with(prefix) && name[prefix.len()..].contains(ext)
 }
 
 fn load_library(path: &str) -> Result<SapNwRfc, libloading::Error> {
@@ -473,6 +481,22 @@ pub fn load_crypto_library(path: &str) -> Result<(), RfcError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[test]
+    fn icu_file_names_of_every_patch_level_match() {
+        let shipped: &[&str] = if cfg!(target_os = "macos") {
+            &["libicuuc.50.dylib", "libicuuc57.dylib"]
+        } else {
+            &["libicuuc.so.50", "libicuuc57.so"]
+        };
+        for name in shipped {
+            assert!(is_icu_file("libicuuc", name), "{name}");
+        }
+        assert!(!is_icu_file("libicuuc", "libicuucx"));
+        assert!(!is_icu_file("libicuuc", "libicui18n57.so"));
+        assert!(!is_icu_file("libicuuc", "libsapnwrfc.so"));
+    }
 
     #[test]
     fn embedded_nul_in_a_path_is_rejected_before_the_sdk() {

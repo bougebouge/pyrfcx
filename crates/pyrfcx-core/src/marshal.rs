@@ -221,6 +221,35 @@ fn int_value(v: &RfcValue) -> Option<i128> {
 
 // ── set_inputs ─────────────────────────────────────────────────────────
 
+/// Look up one parameter of a function by name (`RfcGetParameterDescByName`).
+/// An unknown name fails with the SDK's own error.
+pub(crate) fn parameter_desc(
+    sdk: &ffi::SapNwRfc,
+    func_desc: RFC_FUNCTION_DESC_HANDLE,
+    name_uc: &[u16],
+) -> Result<RFC_PARAMETER_DESC, RfcError> {
+    // Safety: RFC_PARAMETER_DESC is a plain C struct; all-zero is a valid
+    // initial value for an out-param.
+    let mut param_desc: RFC_PARAMETER_DESC = unsafe { std::mem::zeroed() };
+    let mut error_info = ffi::zero_error_info();
+
+    // Safety: func_desc is a valid function descriptor handle from
+    // the SDK cache. name_uc is a valid null-terminated UTF-16 string.
+    let rc = unsafe {
+        sdk.RfcGetParameterDescByName(
+            func_desc,
+            name_uc.as_ptr(),
+            &mut param_desc,
+            &mut error_info,
+        )
+    };
+    if rc != RFC_RC::RFC_OK {
+        let info = ffi::extract_error_info("RfcGetParameterDescByName", &error_info);
+        return Err(RfcError::from_error_info(info));
+    }
+    Ok(param_desc)
+}
+
 /// Populate IMPORT/CHANGING/TABLES parameters on a function handle from
 /// the caller-supplied map. Unknown parameter names are rejected.
 pub(crate) fn set_inputs(
@@ -232,24 +261,7 @@ pub(crate) fn set_inputs(
 ) -> Result<(), RfcError> {
     for (name, value) in inputs {
         let name_uc = uc::encode_nul_terminated(name, || "parameter name".into())?;
-
-        let mut param_desc: RFC_PARAMETER_DESC = unsafe { std::mem::zeroed() };
-        let mut error_info = ffi::zero_error_info();
-
-        // Safety: func_desc is a valid function descriptor handle from
-        // the SDK cache. name_uc is a valid null-terminated UTF-16 string.
-        let rc = unsafe {
-            sdk.RfcGetParameterDescByName(
-                func_desc,
-                name_uc.as_ptr(),
-                &mut param_desc,
-                &mut error_info,
-            )
-        };
-        if rc != RFC_RC::RFC_OK {
-            let info = ffi::extract_error_info("RfcGetParameterDescByName", &error_info);
-            return Err(RfcError::from_error_info(info));
-        }
+        let param_desc = parameter_desc(sdk, func_desc, &name_uc)?;
 
         // Reject EXPORT-only parameters (InvalidInput: a wrong value, not
         // an SDK failure).
@@ -1575,6 +1587,7 @@ mod tests {
             skip_input_length_check: true,
             pyrfc_int_setters: true,
             skip_decimal_input_check: true,
+            skip_inactive_name_check: true,
             deactivate_before_inputs: true,
             read_inactive_outputs: true,
             pyrfc_date_time_setters: true,

@@ -132,7 +132,7 @@ dependencies = [
 
 [[package]]
 name = "pyrfcx-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "indexmap",
  "libloading",
@@ -141,7 +141,7 @@ dependencies = [
 
 [[package]]
 name = "pyrfcx-py"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "indexmap",
  "pyo3",

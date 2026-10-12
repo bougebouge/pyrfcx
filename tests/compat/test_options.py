@@ -18,7 +18,7 @@ from __future__ import annotations
 import pytest
 
 from pyrfc import Connection, ExternalRuntimeError
-from tests.compat.config import CONNECTION_PARAMS
+from tests.compat.config import CONNECTION_PARAMS, skip_if_sdk_accepts_unknown_inactive_name
 
 pytestmark = [pytest.mark.live, pytest.mark.compat]
 
@@ -61,6 +61,7 @@ class TestNotRequested:
         assert res["RFCTABLE"][0]["RFCCHAR1"] == ""
 
     def test_unknown_parameter_name(self, conn):
+        skip_if_sdk_accepts_unknown_inactive_name()
         # The name reaches the SDK verbatim: case matters.
         for name in ("NOPE", "echotext"):
             with pytest.raises(ExternalRuntimeError) as ex:

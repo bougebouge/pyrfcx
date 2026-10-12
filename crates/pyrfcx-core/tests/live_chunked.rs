@@ -33,6 +33,7 @@ fn facade_compat() -> CompatOptions {
         skip_input_length_check: true,
         pyrfc_int_setters: true,
         skip_decimal_input_check: true,
+        skip_inactive_name_check: true,
         deactivate_before_inputs: true,
         read_inactive_outputs: true,
         pyrfc_date_time_setters: true,

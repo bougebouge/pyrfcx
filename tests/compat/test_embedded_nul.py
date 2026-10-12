@@ -24,7 +24,12 @@ from typing import Any
 import pytest
 
 from pyrfc import ABAPApplicationError, Connection, ExternalRuntimeError
-from tests.compat.config import CONNECTION_PARAMS, DEST, requires_utclong
+from tests.compat.config import (
+    CONNECTION_PARAMS,
+    DEST,
+    requires_utclong,
+    skip_if_sdk_accepts_unknown_inactive_name,
+)
 
 pytestmark = [pytest.mark.live, pytest.mark.compat]
 
@@ -76,6 +81,7 @@ def test_names_are_cut_at_the_nul(client: Any) -> None:
 
 
 def test_a_cut_name_that_is_unknown_fails_as_the_cut_name(client: Any) -> None:
+    skip_if_sdk_accepts_unknown_inactive_name()
     for call in (
         lambda: client.call("STFC_CONNECTION", **{"NOPE\0REQUTEXT": "hi"}),
         lambda: client.call("STFC_STRUCTURE", IMPORTSTRUCT={"NOPE\0RFCCHAR4": "ABCD"}),

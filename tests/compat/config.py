@@ -66,6 +66,26 @@ requires_utclong = pytest.mark.skipif(
     not BACKEND.utclong, reason="UTCLONG needs release 754+; run with PYRFCX_TEST_DEST=TEST_NW757"
 )
 
+
+def skip_if_sdk_accepts_unknown_inactive_name() -> None:
+    """Skip the running test when the SDK accepts an unknown inactive name.
+
+    The facade, like pyrfc, lets the SDK judge an inactive parameter name.
+    Call this inside the test, after a connection is open: on Linux, loading
+    the SDK before the client library has pinned ICU exits the process.
+    The import is here, not at the top: tests.test_sdk_pin imports
+    tests.conftest, which imports this module.
+    """
+    from tests.test_sdk_pin import vendored_dll_version
+
+    major, _, patch_level, _ = vendored_dll_version()
+    if (major, patch_level) < (7500, 15):
+        pytest.skip(
+            "SDK below 7.50 PL 15 accepts an unknown name in RfcSetParameterActive "
+            "(release notes 7.50.15)"
+        )
+
+
 # SAP user queried where pyrfc's suite queried user "demo"
 # (BAPI_USER_GET_DETAIL) — that demo user does not exist on our system.
 # Set PYRFCX_TEST_USER to a user that exists on the test system; the tests
