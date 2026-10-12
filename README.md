@@ -1,17 +1,29 @@
 # pyrfcx
 
-`pyrfcx` is an SAP NW RFC client for Python with a Rust core which includes **`pyrfcx-compat`** (compatibility layer), a drop-in replacement for the client part of SAP's pyrfc 3.4.
+`pyrfcx` is an SAP NW RFC client for Python with a Rust core. It installs
+the import package **`pyrfc`**, a drop-in replacement for the client part of
+SAP's pyrfc 3.4, which SAP has archived. The `pyrfc` package reproduces the
+quirks of pyrfc 3.4, each one measured on real pyrfc first.
 
-The compatibility layer reproduces the quirks of pyrfc 3.4, each one extensively measured on real pyrfc first.
+How it ships:
+
+- **Install with pip, no compiler.** pyrfc 3.4 is not on PyPI. It needs a
+  build from source for each CPython version.
+- **New CPython versions run without a new release.** One `abi3` wheel runs
+  on CPython 3.10 and later. Tested from 3.10 to 3.15.
+- **New SDK patch levels run without a change.** pyrfcx loads the SDK at run
+  time. Tested from 7.50 patch level 11 to 20.
+
+Limits: client only, standard (GIL) CPython only. A call releases the GIL during network operations.
 
 ## Install
 
 ```powershell
-pip install pyrfcx-compat
+pip install pyrfcx
 ```
 
-Remove real `pyrfc` from the environment first: both packages install the
-import name `pyrfc`.
+Remove real `pyrfc` from the environment first: both install the import
+name `pyrfc`.
 
 ## Use
 
@@ -52,10 +64,10 @@ directly (`ashost`, `sysnr`, `client`, `user`, `passwd`, and so on).
 ### Tests
 
 Every live test runs against a real ABAP system. The compat suite runs
-twice on the same SDK: once on `pyrfcx-compat` and once on real pyrfc 3.4.
+twice on the same SDK: once on `pyrfc` from pyrfcx and once on real pyrfc 3.4.
 Both runs must give the same results.
 
-| Suite | pyrfc 3.4 | `pyrfcx-compat` | `pyrfcx` | C SDK |
+| Suite | pyrfc 3.4 | `pyrfc` (pyrfcx) | `pyrfcx` | C SDK |
 |---|---|---|---|---|
 | pyrfc 3.4's own tests, adapted (`tests/compat/`) | 78 | 78 | – | – |
 | Added compat tests, each expectation measured on real pyrfc first | 56 | 56 | – | – |
@@ -67,20 +79,20 @@ Time was
 measured on macOS arm64 with SDK 7.50 patch level 15; memory on Windows x64
 with patch level 18.
 
-**Time.** On large tables `pyrfcx-compat` is faster than pyrfc 3.4 and uses
+**Time.** On large tables `pyrfc` from pyrfcx is faster than pyrfc 3.4 and uses
 less CPU. On small calls the two are the same: the backend sets the pace.
 Seconds per call, median of 10 runs in fresh processes:
 
-| Case | Measure | pyrfc | `pyrfcx-compat` | `pyrfcx-compat` is |
+| Case | Measure | pyrfc 3.4 | `pyrfc` (pyrfcx) | `pyrfc` (pyrfcx) is |
 |---|---|---|---|---|
 | `RFC_READ_TABLE`, 100 000 rows of DD03L | Wall time<br>CPU time | 5.79<br>1.13 | 5.62<br>0.99 | 3 % better<br>13 % better |
 | 100 000 rows of 40 × CHAR(15) | Wall time<br>CPU time | 10.98<br>6.30 | 9.97<br>5.27 | 9 % better<br>16 % better |
 
-**Memory.** `pyrfcx-compat` never uses more memory than pyrfc, and its
+**Memory.** `pyrfc` from pyrfcx never uses more memory than pyrfc, and its
 results are smaller: all row dicts share one string object per key. Bytes
 per table row:
 
-| Table shape | Measure | pyrfc | `pyrfcx-compat` | `pyrfcx-compat` is |
+| Table shape | Measure | pyrfc 3.4 | `pyrfc` (pyrfcx) | `pyrfc` (pyrfcx) is |
 |---|---|---|---|---|
 | 40 × CHAR(15) | Peak memory<br>Size of the result | 5 508<br>5 429 | 3 606<br>3 468 | 35 % better<br>36 % better |
 | 1 × CHAR(512) | Peak memory<br>Size of the result | 1 201<br>614 | 1 199<br>561 | same<br>9 % better |
@@ -122,7 +134,7 @@ ICU library" dialog instead of failing. Set `SAPNWRFC_HOME`.
 
 ## pyrfc 3.4 quirks that the drop-in keeps
 
-A program can depend on a quirk, so `pyrfc` from `pyrfcx-compat` reproduces
+A program can depend on a quirk, so `pyrfc` from pyrfcx reproduces
 the quirks below.
 
 | Case | pyrfc 3.4 and the drop-in |
@@ -141,9 +153,17 @@ the quirks below.
 
 Each row is measured on real pyrfc 3.4.
 
+### Moving from pyrfc 3.3.1
+
+The drop-in follows pyrfc 3.4, not pyrfc 3.3.1. One difference is visible:
+the message of a `CommunicationError` has no trailing newline. pyrfc 3.3.1
+keeps the newline that the SDK sends. pyrfc 3.4 right-strips the message,
+and the drop-in does the same. Code that stores the message stores one
+character less.
+
 ## The engine
 
-pyrfcx shares no code with pyrfc. `pyrfcx` is a new binding of the SAP NW RFC SDK, written in Rust. `pyrfcx-compat` is a thin Python layer on top of it that reproduces the pyrfc 3.4 API.
+pyrfcx shares no code with pyrfc. `pyrfcx` is a new binding of the SAP NW RFC SDK, written in Rust. The `pyrfc` package is a thin Python layer on top of it that reproduces the pyrfc 3.4 API.
 
 You need no Rust and no compiler to use it. Pre-compiled wheels exist for Windows x64, macOS arm64 and Linux x86_64 and aarch64, for CPython 3.10 and later.
 
@@ -169,12 +189,11 @@ cd pyrfcx
 uv venv --python <path-to-python>
 uv pip install "maturin>=1.5,<2"    # or `just sync`, which installs every dev tool
 
-# Build the wheels into target/wheels (on Windows add --target x86_64-pc-windows-msvc)
+# Build the wheel into target/wheels (on Windows add --target x86_64-pc-windows-msvc)
 uv run maturin build --release --out target/wheels
-uv build pyrfcx-compat/ --wheel --out-dir target/wheels
 
-# Install them
-uv pip install --find-links target/wheels pyrfcx-compat
+# Install it
+uv pip install --find-links target/wheels pyrfcx
 ```
 
 `just wheels` builds the same pyrfcx wheel with the source paths remapped, so
@@ -185,7 +204,6 @@ For a development install, use an editable build:
 
 ```sh
 uv run maturin develop --uv     # on Windows add --target x86_64-pc-windows-msvc
-uv pip install -e pyrfcx-compat/
 ```
 
 The Linux wheels are built in Docker (`just linux-wheel <arch>`). The tests

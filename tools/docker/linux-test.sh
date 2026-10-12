@@ -25,12 +25,10 @@ venv="/tmp/venv-$tag"
 uv venv --clear -q --python "/opt/python/$tag-$tag/bin/python" "$venv"
 export VIRTUAL_ENV="$venv"
 uv pip install -q "$wheel" "pytest>=8"
-# pyrfcx-compat depends only on pyrfcx, which is installed above.
-uv pip install -q --no-deps ./pyrfcx-compat
 
 echo "wheel: $wheel"
 SAPNWRFC_HOME="$PWD/vendor/nwrfcsdk" "$venv/bin/python" -c \
-    'import sys, pyrfcx; print(sys.version.split()[0], pyrfcx.sdk_version())'
+    'import sys, pyrfc, pyrfcx; print(sys.version.split()[0], pyrfcx.sdk_version())'
 
 # Keep the bind-mounted tree clean: no bytecode, no pytest cache.
 export PYTHONDONTWRITEBYTECODE=1

@@ -84,12 +84,6 @@ jobs:
           # Linux builds run in a container; sccache is the cache that works there.
           sccache: ${{ matrix.manylinux != '' }}
 
-      - name: Build compat wheel
-        if: matrix.name == 'linux-x86_64'
-        run: |
-          pip install uv
-          uv build pyrfcx-compat/ --wheel --out-dir dist
-
       # The wheel must install on a stock CPython and import with no SDK on
       # the machine. The SDK is loaded at the first connection, not at import.
       - name: Import check
@@ -98,12 +92,8 @@ jobs:
           pip install uv
           uv venv --python 3.10 .venv-smoke
           uv pip install --python .venv-smoke --no-index --find-links dist pyrfcx
-          .venv-smoke/bin/python -c "import pyrfcx, pyrfcx._native; print(pyrfcx.__version__)" 2>/dev/null \
-            || .venv-smoke/Scripts/python -c "import pyrfcx, pyrfcx._native; print(pyrfcx.__version__)"
-          if [ "${{ matrix.name }}" = linux-x86_64 ]; then
-            uv pip install --python .venv-smoke --no-index --find-links dist pyrfcx-compat
-            .venv-smoke/bin/python -c "import pyrfc; print(pyrfc.__version__)"
-          fi
+          .venv-smoke/bin/python -c "import pyrfcx, pyrfcx._native, pyrfc; print(pyrfcx.__version__, pyrfc.__version__)" 2>/dev/null \
+            || .venv-smoke/Scripts/python -c "import pyrfcx, pyrfcx._native, pyrfc; print(pyrfcx.__version__, pyrfc.__version__)"
 
       - uses: actions/upload-artifact@v7
         with:

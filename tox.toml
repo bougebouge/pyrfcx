@@ -18,21 +18,16 @@
 # tests/test_sdk_pin.py fails if that pin does not hold.
 
 requires = ["tox>=4.22", "tox-uv>=1.11"]
-env_list = ["py310", "py311", "py312", "py313", "py314"]
+env_list = ["py310", "py311", "py312", "py313", "py314", "py315"]
 
 [env_run_base]
 description = "pytest on {env_name} ({env:PYRFCX_TOX_ARCH:x86_64}) against the shared abi3 wheel"
 package = "wheel"
 wheel_build_env = ".pkg"
 dependency_groups = ["dev"]
-# pyrfcx-compat is a separate distribution that depends on pyrfcx. tox installs
-# `deps` before the wheel, when pyrfcx cannot be resolved yet, so compat goes
-# in after the wheel, with --no-deps (pyrfcx is its only dependency).
-deps = ["uv"]
 # The live tests log on with SNC: without SNC_LIB_64 the SDK falls back to a
 # bare "sncgss64.dll" and every connection fails.
 pass_env = ["SNC_LIB", "SNC_LIB_64", "SECUDIR"]
-commands_pre =[["uv", "pip", "install", "--no-deps", "./pyrfcx-compat"]]
 commands = [
     # Fail fast on a non-x64 interpreter. platform.machine() reports the host
     # (ARM64) even under x64 emulation; sysconfig reports the interpreter.
@@ -54,6 +49,9 @@ base_python = ["cpython3.13-64-{env:PYRFCX_TOX_ARCH:x86_64}"]
 
 [env.py314]
 base_python = ["cpython3.14-64-{env:PYRFCX_TOX_ARCH:x86_64}"]
+
+[env.py315]
+base_python = ["cpython3.15-64-{env:PYRFCX_TOX_ARCH:x86_64}"]
 
 [env.".pkg"]
 base_python = ["cpython3.14-64-{env:PYRFCX_TOX_ARCH:x86_64}"]

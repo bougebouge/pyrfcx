@@ -142,7 +142,7 @@ lint:
     cargo clippy --workspace --all-targets -- -D warnings
     uv run ruff check .
     uv run ruff format --check .
-    uv run mypy python/ pyrfcx-compat/src/ tests/
+    uv run mypy python/ tests/
 
 # Format everything
 fmt:
@@ -222,13 +222,12 @@ linux-test arch py="3.10" *args:
     bash tools/docker/linux-run.sh test {{ arch }} bash tools/docker/linux-test.sh {{ py }} {{ args }}
 
 # NB: `uv sync` removes everything that is not in the lock, so the editable
-# installs below must be restored after any sync.
+# install below must be restored after any sync.
 
-# Sync/create the project venv with the dev dependency group (+ editable installs)
+# Sync/create the project venv with the dev dependency group (+ editable install)
 sync:
     uv sync --group dev
     uv run maturin develop --uv --target {{ maturin_target }}
-    uv pip install -e pyrfcx-compat/
 
 # Internal-only recipes; the file is absent in the public tree.
 import? 'justfile.internal'

@@ -5,11 +5,11 @@ that a program can see when it uses `pyrfc`. Read it before you update the
 SDK on a server.
 
 The SDK causes each change, not the Python library. So each change applies
-to pyrfc 3.4 and to `pyrfc` from `pyrfcx-compat` in the same way.
+to pyrfc 3.4 and to `pyrfc` from pyrfcx in the same way.
 
 ## Tested patch levels
 
-- Tested: 11, 14, 15, 18 and 19.
+- Tested: 11, 14, 15, 18, 19 and 20.
 - Not tested: 12, 13, 16 and 17.
 
 The patch level that introduced each change comes from the SDK's release
@@ -58,3 +58,13 @@ notes, the file `doc/release_notes.txt` in the SDK.
   instead of `libicuuc.so.50`. macOS: `libicuuc57.dylib` instead of
   `libicuuc.50.dylib`.
 - A program sees no difference.
+
+### Patch level 19: trace files are written with no trace setting
+
+- SDK change: a part of the RFC trace is always on. This is a regression.
+  Patch level 20 fixes it.
+- Patch level 19: the SDK writes RFC trace files (`dev_rfc*.trc`) in the
+  working directory. No trace setting in `sapnwrfc.ini` or in the
+  environment is needed for this.
+- Patch level 20 and later: the SDK writes trace files only when a trace is
+  switched on.

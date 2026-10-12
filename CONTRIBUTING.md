@@ -49,7 +49,7 @@ The `justfile` exports the same target and passes it to maturin, so the
 | `just` | Lists the targets. |
 | `cargo build --workspace` | Builds the Rust crates alone; no Python needed. |
 | `just develop` | Builds the extension module into the venv (`maturin develop`). |
-| `just sync` | Syncs the venv with the dev group, builds pyrfcx, installs `pyrfcx-compat/` as editable. |
+| `just sync` | Syncs the venv with the dev group, then builds pyrfcx into it as an editable install (`pyrfcx` and `pyrfc`). |
 | `just test` | Runs `develop`, then the Rust tests and the Python tests. |
 | `just test-rust` | Runs `cargo test --workspace`. |
 | `just test-python` | Runs `pytest tests/`. Run `just develop` first. Extra arguments go to pytest: `just test-python -rs`. A good run has 0 failed; skips come only from a missing `PYRFCX_TEST_USER`, an SNC-only destination or a release below 754; `dumps`, `netcut` and `soak` tests are deselected by default. |
@@ -310,11 +310,11 @@ the Rust core are designed from the SDK, not from pyrfc.
 ## Release wheels (CI)
 
 `.github/workflows/wheels.yml` builds the wheels for Linux x86_64 and
-aarch64 (manylinux_2_28), Windows x64 and macOS arm64, plus the
-`pyrfcx-compat` wheel. It runs on every tag and on manual start, never on a
-push or a pull request. It needs no SAP file: the FFI bindings are
-committed and the SDK is loaded at run time. Each job installs its wheel
-on CPython 3.10 and imports `pyrfcx`; the live suites stay local. The
+aarch64 (manylinux_2_28), Windows x64 and macOS arm64, one wheel per
+platform. It runs on every tag and on manual start, never on a push or a
+pull request. It needs no SAP file: the FFI bindings are committed and the
+SDK is loaded at run time. Each job installs its wheel on CPython 3.10 and
+imports `pyrfcx` and `pyrfc` from it; the live suites stay local. The
 `collect` job offers one download, `wheels-<tag>`, for the upload to
 TestPyPI and PyPI. The wheels on PyPI come from this workflow, not from a
 workstation.

@@ -27,6 +27,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Typing :: Typed",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
@@ -52,6 +53,8 @@ module-name = "pyrfcx._native"
 # checkout imports the installed package and not the source tree (maturin's
 # recommended layout).
 python-source = "python"
+# The pyrfc facade ships in the same wheel as a second top-level package.
+python-packages = ["pyrfc"]
 exclude = ["vendor/**"]
 
 # No Rust SBOM in the wheel: it records path dependencies as absolute
@@ -66,8 +69,8 @@ line-length = 99
 # Markdown: ruff 0.16 formats fenced Python blocks; the documentation snippets
 # keep their aligned comments.
 extend-exclude = ["docs-*", "PyRFC-*", "*.md"]
-# Both import packages are first-party: pyrfcx at the root, pyrfc in the compat distribution.
-src = ["python", "pyrfcx-compat/src"]
+# Both import packages (pyrfcx and pyrfc) are first-party, under python/.
+src = ["python"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "TCH", "RUF"]

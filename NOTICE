@@ -19,7 +19,7 @@ or sponsored by SAP SE.
 
 pyrfc compatibility
 -------------------
-The pyrfcx-compat distribution provides an import package named "pyrfc".
+The pyrfcx distribution provides an import package named "pyrfc".
 It reproduces the public API and the client behaviour of SAP's pyrfc 3.4 so
 that existing programs run unchanged. It contains no pyrfc code.
 

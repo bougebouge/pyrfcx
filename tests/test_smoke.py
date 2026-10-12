@@ -15,7 +15,7 @@ def test_package_version() -> None:
 
     import pyrfcx
 
-    assert pyrfcx.__version__ == "0.1.1"
+    assert pyrfcx.__version__ == "0.2.0"
     assert pyrfcx.__version__ == importlib.metadata.version("pyrfcx")
 
 
@@ -43,14 +43,22 @@ def test_pyrfc_version() -> None:
     assert pyrfc.__version_info__ == ("3", "4")
 
 
-def test_compat_distribution_pins_the_same_pyrfcx_version() -> None:
-    # The two distributions are released together with one version, and
-    # pyrfcx-compat pins pyrfcx exactly. Keep the two numbers in sync.
+def test_pyrfc_ships_in_the_pyrfcx_distribution() -> None:
+    # One distribution, two import packages: the facade has no wheel of its own.
     import importlib.metadata
+    from pathlib import Path
 
-    version = importlib.metadata.version("pyrfcx")
-    assert importlib.metadata.version("pyrfcx-compat") == version
-    assert f"pyrfcx=={version}" in (importlib.metadata.requires("pyrfcx-compat") or [])
+    import pyrfc
+    import pyrfcx
+
+    # Both packages sit side by side: in site-packages, or in python/ for an
+    # editable install.
+    assert Path(pyrfc.__file__).parent.parent == Path(pyrfcx.__file__).parent.parent
+    # An editable install records no package files, so the mapping is
+    # checked only where the wheel itself is installed.
+    owners = importlib.metadata.packages_distributions()
+    if "pyrfcx" in owners:
+        assert owners["pyrfc"] == ["pyrfcx"]
 
 
 def test_no_raw_handle() -> None:
